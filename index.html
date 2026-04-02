@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Feedback Tool Web App</title>
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:20px}
-    h1,h2{margin-bottom:10px}
-    table{border-collapse:collapse;width:100%;margin-bottom:20px}
-    th,td{border:1px solid #ccc;padding:6px;vertical-align:top}
-    th{background:#f4f4f4}
-    input[type="number"],input[type="text"]{padding:5px;width:100%;box-sizing:border-box}
-    button{padding:6px 12px;margin-top:5px;cursor:pointer}
-    .output{margin-top:10px;white-space:pre-wrap;background:#f9f9f9;padding:10px;border-radius:4px}
-    .missed{background:#ffe6e6}
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#f6f0ff;color:#2b1747}
+    h1,h2{margin-bottom:10px;color:#5b21b6}
+    table{border-collapse:collapse;width:100%;margin-bottom:20px;background:#ffffff}
+    th,td{border:1px solid #c4b5fd;padding:6px;vertical-align:top}
+    th{background:#ede9fe;color:#4c1d95}
+    input[type="number"],input[type="text"]{padding:5px;width:100%;box-sizing:border-box;border:1px solid #a78bfa;border-radius:4px}
+    button{padding:6px 12px;margin-top:5px;cursor:pointer;background:#7c3aed;color:#fff;border:0;border-radius:4px}
+    button:hover{background:#6d28d9}
+    .output{margin-top:10px;white-space:pre-wrap;background:#f3e8ff;padding:10px;border-radius:4px;border:1px solid #ddd6fe}
+    .missed{background:#f5d0fe}
     .section{margin-bottom:30px}
     label{display:inline-block;margin-right:10px}
   </style>
@@ -30,7 +31,7 @@
     </table>
 
     <label>Баллы (C34):
-      <input type="number" id="totalScore" min="0" max="69" value="0">
+      <input type="number" id="totalScore" min="0" value="0">
     </label>
     <button id="btnCompute">Обновить пропущенные</button>
     <div id="missedList" class="output">Ничего не пропущено</div>
@@ -60,7 +61,7 @@
 
 <script>
 /* ----------- 32 вопроса ----------- */
-const questions=[ /* <-- тот же массив, сокращён здесь ради места */
+const questions=[
   {q:1,text:"Лидер участка готовится к смене, заполняет чек-лист подготовки; собирает и анализирует ключевую информацию.",max:3},
   {q:2,text:"Проверяет расписание и убеждается в достаточном количестве сотрудников и правильной комплектации позиций.",max:3},
   {q:3,text:"Контролирует запас упаковки на 24 ч и продуктов на 2 ч; участок организован эргономично.",max:2},
@@ -128,6 +129,9 @@ const feedbackTemplates=[
 
 /* ----- генерация таблицы ----- */
 const tbody=document.querySelector('#questionsTable tbody');
+const maxTotalScore=questions.reduce((sum,item)=>sum+item.max,0);
+const totalScoreInput=document.getElementById('totalScore');
+totalScoreInput.max=String(maxTotalScore);
 questions.forEach(q=>{
   const r=tbody.insertRow();
   r.insertCell().textContent=q.q;
@@ -137,14 +141,15 @@ questions.forEach(q=>{
 
 /* ----- обработчики ----- */
 document.getElementById('btnCompute').addEventListener('click',computeMissed);
-document.getElementById('totalScore').addEventListener('change',computeMissed);
+totalScoreInput.addEventListener('change',computeMissed);
 document.getElementById('btnGenerateTimes').addEventListener('click',generateTimes);
 document.getElementById('btnGenerateFeedback').addEventListener('click',generateFeedback);
 
 /* ----- функции ----- */
 function computeMissed(){
-  const score=+document.getElementById('totalScore').value||0;
-  let missing=69-score-2;                         // -2 за пункт 24
+  const score=Math.max(0,Math.min(maxTotalScore,+totalScoreInput.value||0));
+  totalScoreInput.value=String(score);
+  let missing=maxTotalScore-score;
   const missed=[];
   Array.from(tbody.rows).forEach(r=>r.classList.remove('missed'));
 
@@ -174,10 +179,10 @@ function computeMissed(){
 }
 
 function updateScores(){
-  const score=+document.getElementById('totalScore').value||0;
-  const pct=((score/69)*100).toFixed(2)+'%';
+  const score=Math.max(0,Math.min(maxTotalScore,+totalScoreInput.value||0));
+  const pct=((score/maxTotalScore)*100).toFixed(2)+'%';
   document.getElementById('percentScore').textContent=pct;
-  const noTarget=((score/69)*100*0.9).toFixed(2);
+  const noTarget=((score/maxTotalScore)*100*0.9).toFixed(2);
   document.getElementById('scoreNoTarget').textContent=noTarget;
   document.getElementById('scoreWithTarget').textContent=(+noTarget+10).toFixed(2);
 }
@@ -209,6 +214,7 @@ function generateFeedback(){
     :'Нет подходящего шаблона обратной связи.';
   document.getElementById('feedbackOutput').textContent=txt;
 }
+computeMissed();
 </script>
 </body>
 </html>
